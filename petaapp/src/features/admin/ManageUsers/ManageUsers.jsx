@@ -47,14 +47,17 @@ export default function ManageUsers() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
+    const cleanUsername = formData.username.trim();
+    const payload = { ...formData, username: cleanUsername, email: formData.email.trim() };
+
     try {
       if (editingUser) {
-        const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${editingUser.id}`, formData, {
+        const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${editingUser.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers(users.map(u => u.id === editingUser.id ? res.data : u));
       } else {
-        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/users`, formData, {
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/users`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers([res.data, ...users]);
@@ -182,6 +185,9 @@ export default function ManageUsers() {
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
                   required 
                 />
+                <span className="form-helper-text" style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', lineHeight: '1.4', textAlign: 'left', display: 'block' }}>
+                  * Bebas menggunakan huruf besar/kecil dan spasi.
+                </span>
               </div>
               <div className="form-group">
                 <label>Email</label>

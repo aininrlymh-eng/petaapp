@@ -6,13 +6,18 @@ exports.createUser = async (req, res) => {
 
   const { username, email, password, role } = req.body;
   try {
-    const checkUser = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
+    const cleanUsername = (username || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    if (!cleanUsername) return res.status(400).json({ error: 'Username tidak boleh kosong' });
+
+    const checkUser = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)', [cleanEmail, cleanUsername]);
     if (checkUser.rows.length > 0) return res.status(400).json({ error: 'Username/Email sudah terdaftar' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await db.query(
       'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role, created_at',
-      [username, email, hashedPassword, role || 'user']
+      [cleanUsername, cleanEmail, hashedPassword, role || 'user']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -26,13 +31,16 @@ exports.updateUser = async (req, res) => {
   const { id } = req.params;
   const { username, email, role, password } = req.body;
   try {
+    const cleanUsername = (username || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+
     let query = 'UPDATE users SET username = $1, email = $2, role = $3';
-    let params = [username, email, role, id];
+    let params = [cleanUsername, cleanEmail, role, id];
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       query += ', password = $4 WHERE id = $5 RETURNING id, username, email, role, created_at';
-      params = [username, email, role, hashedPassword, id];
+      params = [cleanUsername, cleanEmail, role, hashedPassword, id];
     } else {
       query += ' WHERE id = $4 RETURNING id, username, email, role, created_at';
     }

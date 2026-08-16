@@ -5,9 +5,10 @@ const db = require('../config/db');
 exports.login = async (req, res) => {
   const { identifier, password } = req.body;
   try {
+    const cleanIdentifier = (identifier || '').trim();
     const userQuery = await db.query(
-      'SELECT * FROM users WHERE email = $1 OR username = $2',
-      [identifier, identifier]
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)',
+      [cleanIdentifier, cleanIdentifier]
     );
 
     if (userQuery.rows.length === 0) {
@@ -45,7 +46,17 @@ exports.login = async (req, res) => {
 exports.register = async (req, res) => {
   const { username, email, password } = req.body;
   try {
-    const checkUser = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
+    const cleanUsername = (username || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    if (!cleanUsername) {
+      return res.status(400).json({ error: 'Nama pengguna tidak boleh kosong' });
+    }
+
+    const checkUser = await db.query(
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)',
+      [cleanEmail, cleanUsername]
+    );
     if (checkUser.rows.length > 0) {
       return res.status(400).json({ error: 'Username atau Email sudah terdaftar' });
     }
@@ -53,7 +64,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await db.query(
       'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role',
-      [username, email, hashedPassword, 'user']
+      [cleanUsername, cleanEmail, hashedPassword, 'user']
     );
 
     res.status(201).json({

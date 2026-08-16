@@ -40,8 +40,9 @@ export default function LoginPage({ onLogin, onBack }) {
     setLoading(true);
 
     try {
+      const cleanIdentifier = identifier.trim();
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/login`, {
-        identifier,
+        identifier: cleanIdentifier,
         password: loginPassword
       });
 
@@ -73,15 +74,16 @@ export default function LoginPage({ onLogin, onBack }) {
     setSuccess('');
     setLoading(true);
 
-    if (username.length < 3 || username.length > 20) {
-      setError('Nama pengguna harus terdiri dari 3 hingga 20 karakter.');
+    const cleanUsername = username.trim();
+    if (cleanUsername.length < 3 || cleanUsername.length > 30) {
+      setError('Nama pengguna harus terdiri dari 3 hingga 30 karakter.');
       setLoading(false);
       return;
     }
 
-    const usernameRegex = /^[a-zA-Z0-9._]+$/;
-    if (!usernameRegex.test(username)) {
-      setError('Nama pengguna hanya boleh mengandung huruf, angka, titik, dan garis bawah (tidak boleh menggunakan karakter unik/simbol lainnya).');
+    const usernameRegex = /^[a-zA-Z0-9._\s]+$/;
+    if (!usernameRegex.test(cleanUsername)) {
+      setError('Nama pengguna hanya boleh mengandung huruf, angka, spasi, titik, dan garis bawah.');
       setLoading(false);
       return;
     }
@@ -108,8 +110,8 @@ export default function LoginPage({ onLogin, onBack }) {
 
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/register`, {
-        username,
-        email,
+        username: cleanUsername,
+        email: email.trim(),
         password: registerPassword
       });
 
@@ -217,7 +219,7 @@ export default function LoginPage({ onLogin, onBack }) {
                   />
                 </div>
                 <span className="form-helper-text" style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', lineHeight: '1.4', textAlign: 'left', display: 'block', paddingLeft: '4px' }}>
-                  * Terdiri dari 3-20 karakter, hanya boleh huruf, angka, titik (.), dan garis bawah (_).
+                  * Terdiri dari 3-30 karakter. Bebas menggunakan huruf besar, huruf kecil, dan spasi.
                 </span>
               </div>
 
